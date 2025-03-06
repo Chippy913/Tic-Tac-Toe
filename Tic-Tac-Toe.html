@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe - Futuristic</title>
+    <style>
+        /* Black & White Futuristic Styles */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #fff; color: black; text-align: center; user-select: none; }
+        .container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        .menu, .game, .end-screen, .difficulty { display: none; }
+        h1 { font-size: 2.5em; margin-bottom: 10px; color: black; }
+
+        /* Animated Black & White Button */
+        @keyframes fade {
+            0% { background: #ddd; box-shadow: 0 0 15px #ddd; }
+            50% { background: #bbb; box-shadow: 0 0 15px #bbb; }
+            100% { background: #ddd; box-shadow: 0 0 15px #ddd; }
+        }
+
+        button {
+            border: none; padding: 15px 30px; font-size: 1.2em; cursor: pointer;
+            border-radius: 20px; margin: 10px; color: black; font-weight: bold;
+            text-transform: uppercase; animation: fade 2s infinite linear;
+        }
+        button:hover { filter: brightness(1.2); }
+
+        .board { display: grid; grid-template-columns: repeat(3, 100px); grid-gap: 10px; margin-top: 20px; }
+        .cell { width: 100px; height: 100px; background: #ccc; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.5em; cursor: pointer; transition: 0.3s; color: black; }
+        .cell:hover { background: #bbb; }
+        .end-screen p { font-size: 2em; margin-bottom: 20px; color: black; }
+    </style>
+</head>
+<body>
+
+    <!-- Main Menu -->
+    <div class="container menu">
+        <h1>Tic-Tac-Toe</h1>
+        <button onclick="selectMode('ai')">AI vs Player</button>
+        <button onclick="selectMode('pvp')">Player vs Player</button>
+    </div>
+
+    <!-- Difficulty Selection -->
+    <div class="container difficulty">
+        <h1>Select Difficulty</h1>
+        <button onclick="startGame('easy')">Easy</button>
+        <button onclick="startGame('medium')">Medium</button>
+        <button onclick="startGame('hard')">Hard</button>
+    </div>
+
+    <!-- Game Screen -->
+    <div class="container game">
+        <h1>Tic-Tac-Toe</h1>
+        <div class="board" id="board"></div>
+        <button onclick="resetGame()">Back to Menu</button>
+    </div>
+
+    <!-- End Screen -->
+    <div class="container end-screen">
+        <p id="result-text"></p>
+        <button onclick="resetGame()">Back to Menu</button>
+    </div>
+
+    <script>
+        let board = ["", "", "", "", "", "", "", "", ""];
+        let currentPlayer = "X";
+        let gameOver = false;
+        let gameMode = "ai";
+        let difficulty = "easy";
+
+        const menu = document.querySelector(".menu");
+        const difficultyMenu = document.querySelector(".difficulty");
+        const game = document.querySelector(".game");
+        const endScreen = document.querySelector(".end-screen");
+        const boardContainer = document.getElementById("board");
+
+        function selectMode(mode) {
+            gameMode = mode;
+            menu.style.display = "none";
+
+            if (mode === "ai") {
+                difficultyMenu.style.display = "flex";
+            } else {
+                startGame();
+            }
+        }
+
+        function startGame(level) {
+            difficulty = level || "pvp";
+            difficultyMenu.style.display = "none";
+            game.style.display = "flex";
+            createBoard();
+        }
+
+        function createBoard() {
+            boardContainer.innerHTML = "";
+            board = ["", "", "", "", "", "", "", "", ""];
+            gameOver = false;
+            currentPlayer = "X";
+
+            for (let i = 0; i < 9; i++) {
+                let cell = document.createElement("div");
+                cell.classList.add("cell");
+                cell.setAttribute("data-index", i);
+                cell.addEventListener("click", handleMove);
+                boardContainer.appendChild(cell);
+            }
+        }
+
+        function handleMove(event) {
+            if (gameOver) return;
+            let index = event.target.getAttribute("data-index");
+            if (board[index] === "") {
+                board[index] = currentPlayer;
+                event.target.textContent = currentPlayer;
+                checkWin();
+
+                if (!gameOver) {
+                    currentPlayer = currentPlayer === "X" ? "O" : "X";
+
+                    if (gameMode === "ai" && currentPlayer === "O") {
+                        setTimeout(botMove, 500);
+                    }
+                }
+            }
+        }
+
+        function botMove() {
+            if (gameOver) return;
+            let index;
+            
+            do { index = Math.floor(Math.random() * 9); } while (board[index] !== "");
+
+            if (index !== -1 && board[index] === "") {
+                board[index] = "O";
+                document.querySelector(`.cell[data-index='${index}']`).textContent = "O";
+                checkWin();
+                currentPlayer = "X";
+            }
+        }
+
+        function checkWin() {
+            const wins = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
+            for (let combo of wins) {
+                if (board[combo[0]] && board[combo[0]] === board[combo[1]] && board[combo[0]] === board[combo[2]]) {
+                    if (gameMode === "pvp") {
+                        showEndScreen(`${board[combo[0]]} Wins`);
+                    } else {
+                        showEndScreen(board[combo[0]] === "X" ? "You Win" : "You Lose");
+                    }
+                    gameOver = true;
+                    return;
+                }
+            }
+            if (!board.includes("")) showEndScreen("It's a Tie!");
+        }
+
+        function showEndScreen(message) {
+            game.style.display = "none";
+            endScreen.style.display = "flex";
+            document.getElementById("result-text").textContent = message;
+        }
+
+        function resetGame() {
+            menu.style.display = "flex";
+            game.style.display = "none";
+            endScreen.style.display = "none";
+            difficultyMenu.style.display = "none";
+        }
+
+        menu.style.display = "flex";
+    </script>
+</body>
+</html>
